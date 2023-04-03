@@ -1,6 +1,0 @@
-$ mkdir -p "/home/runner/queercat-rs/target/debug/build/az-c2897af6781d541a/out/try_track_caller"
-$ cd "/home/runner/queercat-rs/target/debug/build/az-c2897af6781d541a/out/try_track_caller"
-$ printf '%s' "// try_tra"... > "/home/runner/queercat-rs/target/debug/build/az-c2897af6781d541a/out/try_track_caller/try_track_caller.rs"
-$ "rustc" "try_track_caller.rs" "--emit=dep-info,metadata" >& /dev/null
-cargo:rustc-cfg=track_caller
-$ rm -r "/home/runner/queercat-rs/target/debug/build/az-c2897af6781d541a/out/try_track_caller"
