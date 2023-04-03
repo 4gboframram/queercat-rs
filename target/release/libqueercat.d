@@ -1,0 +1,1 @@
+/home/runner/queercat-rs/target/release/libqueercat.rlib: /home/runner/queercat-rs/queercat-proc/src/lib.rs /home/runner/queercat-rs/src/color.rs /home/runner/queercat-rs/src/driver.rs /home/runner/queercat-rs/src/flag.rs /home/runner/queercat-rs/src/lib.rs

@@ -1,0 +1,3 @@
+cargo:rerun-if-changed=build/main.rs
+cargo:rustc-env=TYPENUM_BUILD_CONSTS=/home/runner/queercat-rs/target/release/build/typenum-1d14f6bfd086eb76/out/consts.rs
+cargo:rustc-env=TYPENUM_BUILD_OP=/home/runner/queercat-rs/target/release/build/typenum-1d14f6bfd086eb76/out/op.rs
