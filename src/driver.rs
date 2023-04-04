@@ -1,5 +1,6 @@
 use crate::color::*;
 use crate::flag::{ColorMethod, Flag};
+use crate::{ColorV, Extended};
 use std::io::{self, Read, Write};
 pub enum ColorType {
     Bits24,
@@ -23,16 +24,16 @@ pub struct State<'a, W: Write> {
     writer: W,
     line_index: usize,
     col_index: usize,
-    freq_v: f32,
-    freq_h: f32,
-    offset: f32,
+    freq_v: Extended,
+    freq_h: Extended,
+    offset: Extended,
 }
 
 impl<'a, W: Write> State<'a, W> {
     pub fn with_freq(self, freq: QueerCatFrequency) -> Self {
         use QueerCatFrequency::*;
         let (freq_v, freq_h) = match freq {
-            Original => (0.1, 0.23),
+            Original => (0.23, 0.1),
             Fast => (0.4, 0.4),
             HyperGay => (0.9, 0.9),
             UltraHyperGay => (1.4, 1.4),
@@ -43,8 +44,8 @@ impl<'a, W: Write> State<'a, W> {
         };
 
         Self {
-            freq_h,
-            freq_v,
+            freq_h: Extended::from_num(freq_h),
+            freq_v: Extended::from_num(freq_v),
             ..self
         }
     }
@@ -55,13 +56,13 @@ impl<'a, W: Write> State<'a, W> {
             writer,
             line_index: 0,
             col_index: 0,
-            freq_v: 0.1,
-            freq_h: 0.23,
-            offset: 0.0,
+            freq_h: Extended::lit("0.1"),
+            freq_v: Extended::lit("0.23"),
+            offset: Extended::ZERO,
         }
     }
-    pub const fn with_offset(mut self, offset: f32) -> Self {
-        self.offset = offset;
+    pub fn with_offset(mut self, offset: f32) -> Self {
+        self.offset = Extended::from_num(offset);
         self
     }
 }
@@ -106,9 +107,9 @@ impl<'a, W: Write> AnsiColorizer<'a, W> {
 impl<'a, W: Write> Colorizer<'a, W> for AnsiColorizer<'a, W> {
     fn print_color(&mut self) -> Result<(), io::Error> {
         let state = &mut self.state;
-        let next_ansi_code_index = (state.offset * (state.flag.ansi_colors.len() as f32)) as usize
-            + ((state.col_index as f32) * state.freq_v + (state.line_index as f32) * state.freq_h)
-                as usize;
+        let next_ansi_code_index = ((state.offset * (state.flag.ansi_colors.len() as u32))
+            + ((state.col_index) as u32 * state.freq_v + (state.line_index as u32) * state.freq_h))
+            .to_num::<u32>() as usize;
 
         if next_ansi_code_index != self.previous_ansi_code_index {
             self.previous_ansi_code_index = next_ansi_code_index;
@@ -133,7 +134,7 @@ impl<'a, W: Write> Bits24Colorizer<'a, W> {
     pub const fn new(state: State<'a, W>) -> Self {
         Self {
             state,
-            previous_color: Color::new(0.0, 0.0, 0.0),
+            previous_color: Color::new(ColorV::ZERO, ColorV::ZERO, ColorV::ZERO),
         }
     }
 }
@@ -141,14 +142,19 @@ impl<'a, W: Write> Bits24Colorizer<'a, W> {
 impl<'a, W: Write> Colorizer<'a, W> for Bits24Colorizer<'a, W> {
     fn print_color(&mut self) -> Result<(), io::Error> {
         let state = &mut self.state;
-        let theta = (state.col_index as f32) * state.freq_v * 0.2// / 5.0
-            + (state.line_index as f32) * state.freq_h
-            + (state.offset * core::f32::consts::PI);
+        let theta = (state.freq_v / 30) * (state.col_index as u32)
+            +  state.freq_h / 6  * (state.line_index as u32)
+            + (state.offset / 12);
 
+        let theta = ColorV::wrapping_from_num(theta);
         let color = match state.flag.color_method {
             ColorMethod::Rainbow => Color::rainbow(theta),
 
-            ColorMethod::Stripes => Color::stripe(theta, &state.flag),
+            ColorMethod::Stripes => {
+                let stripe_size = Extended::from_num(state.flag.stripe_colors.len()).recip();
+                let stripe_size = ColorV::wrapping_from_num(stripe_size);
+                Color::stripe(theta, &state.flag, stripe_size)
+            }
         };
 
         if color != self.previous_color {
@@ -156,9 +162,9 @@ impl<'a, W: Write> Colorizer<'a, W> for Bits24Colorizer<'a, W> {
 
             state.writer.write_fmt(format_args!(
                 "\x1b[38;2;{};{};{}m",
-                (color.red() * 255.0) as u8,
-                (color.green() * 255.0) as u8,
-                (color.blue() * 255.0) as u8
+                (Extended::from_num(color.red()).wrapping_shl(8)).to_num::<u32>(),
+                (Extended::from_num(color.green()).wrapping_shl(8)).to_num::<u32>(),
+                (Extended::from_num(color.blue()).wrapping_shl(8)).to_num::<u32>()
             ))
         } else {
             Ok(())
@@ -203,21 +209,10 @@ impl<'a, W: Write, C: Colorizer<'a, W>> QueerCat<'a, W, C> {
 }
 
 use std::iter::Iterator;
-pub struct EscapeSkipper<I>(I);
+struct EscapeSkipper<I>(I);
 impl<I: Iterator<Item = Result<u8, io::Error>>> EscapeSkipper<I> {
-    pub const fn new(item: I) -> Self {
+    const fn new(item: I) -> Self {
         Self(item)
-    }
-}
-
-#[inline(always)]
-/// Brings [unlikely](core::intrinsics::unlikely) to stable rust.
-pub const fn unlikely(b: bool) -> bool {
-    #[allow(clippy::needless_bool)]
-    if (1i32).checked_div(if b { 0 } else { 1 }).is_none() {
-        true
-    } else {
-        false
     }
 }
 
@@ -231,7 +226,8 @@ impl<I: Iterator<Item = Result<u8, io::Error>>> Iterator for EscapeSkipper<I> {
                 return Some(item);
             }
         };
-        if unlikely(i == b'\x1b') {
+
+        if i == b'\x1b' {
             while let Some(n) = self.0.next() {
                 match n {
                     Ok(c) if c.is_ascii_alphabetic() => {

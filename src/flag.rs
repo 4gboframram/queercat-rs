@@ -9,11 +9,10 @@ pub struct Flag<'a> {
     pub name: &'a str,
     pub ansi_colors: &'a [u8],
     pub stripe_colors: &'a [crate::color::Color],
-    pub factor: f32,
+    pub factor: crate::Extended,
     pub color_method: ColorMethod,
 }
 
-use queercat_proc::stripes;
 use unstringify::unstringify;
 
 macro_rules! stripe_flag {
@@ -32,13 +31,13 @@ macro_rules! stripe_flag {
         }, $($rest:tt)*
     ) => {
        unstringify!{concat!("pub const fn ", $name, "() -> Flag<'static>", stringify!({
-            #[stripes(crate)]
-            const STRIPES: [UwU] = [$($stripes),*];
+            // #[stripes(crate)]
+            const STRIPES: [crate::color::Color; [$($stripes),*].len()] = [$(crate::color::Color::from_hex($stripes)),*];
              Flag {
         name: $name,
         ansi_colors: &[$($ansi),*],
         stripe_colors: &STRIPES,
-        factor: $factor,
+        factor: crate::Extended::lit(stringify!($factor)),
         color_method: ColorMethod::Stripes,
     }
         }))}
@@ -285,7 +284,7 @@ pub const fn rainbow() -> Flag<'static> {
             198, 199, 163, 164, 128, 129, 93, 99, 63, 69, 33,
         ],
         stripe_colors: &[],
-        factor: 0.0,
+        factor: crate::Extended::lit("0.0"),
         color_method: ColorMethod::Rainbow,
     }
 }

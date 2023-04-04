@@ -1,92 +1,93 @@
-use crate::assume_normal;
+
 use crate::flag::Flag;
-
-fn put_in_range(theta: f32) -> f32 {
-    // The original used 2 while loops, but here we're using rem_euclid and seeing how it goes
-    theta.rem_euclid(TWO_PI)
-}
-
-pub(crate) const TWO_PI: f32 = 6.2831853071795864769252867665590057683943387987502116419498891846;
+use crate::{ColorV, Extended};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Color {
-    red: f32,
-    green: f32,
-    blue: f32,
+    red: ColorV,
+    green: ColorV,
+    blue: ColorV,
 }
 
-#[inline(always)]
-// 1.0 - ((uwu % 2.0) - 1.0).abs();
-fn rainbow_part(f: f32, as_u8: u8) -> f32 {
-    match as_u8 {
-        0 => f,
-        1 => 2.0 - f,
-        2 => f - 2.0,
-        3 => 4.0 - f,
-        4 => f - 4.0,
-        5 => 6.0 - f,
-        _ => unreachable!(),
+const fn trunc(v: Extended) -> ColorV {
+    if v.to_bits() >= Extended::ONE.to_bits() {
+        ColorV::MAX
+    } else {
+        ColorV::const_from_fixed(v)
     }
 }
 impl Color {
-    pub const fn new(r: f32, g: f32, b: f32) -> Self {
+    pub const fn new(r: ColorV, g: ColorV, b: ColorV) -> Self {
         Self {
             red: r,
             green: g,
             blue: b,
         }
     }
-    pub const fn red(&self) -> f32 {
+    fn from_ext(r: Extended, g: Extended, b: Extended) -> Self {
+        Self::new(trunc(r), trunc(g), trunc(b))
+    }
+    pub const fn from_hex(hex: u32) -> Self {
+        let r = (hex & 0xff0000) << 8;
+        let g = (hex & 0x00ff00) << 16;
+        let b = (hex & 0x0000ff) << 24;
+        let r = ColorV::from_bits(r);
+        let g = ColorV::from_bits(g);
+        let b = ColorV::from_bits(b);
+        Self::new(r, g, b)
+    }
+    pub const fn red(&self) -> ColorV {
         self.red
     }
-    pub const fn blue(&self) -> f32 {
+    pub const fn blue(&self) -> ColorV {
         self.blue
     }
-    pub const fn green(&self) -> f32 {
+    pub const fn green(&self) -> ColorV {
         self.green
     }
 
-    pub fn rainbow(theta: f32) -> Self {
-        // let h = put_in_range(theta);
-        let theta = theta; // * 0.5;
-        let f = theta % 6.0; // * 0.95492965855; // 60 degrees
-        let range = f as u8; // (uwu as u32) % 6;
-        let x = rainbow_part(f, range);
+    // essentially just Hsv(theta, 1.0, 1.0) to rgb, but with some quick optimizations that make it inaccurate
+    pub fn rainbow(theta: ColorV) -> Self {
+        let theta = Extended::from_num(theta);
+        let f = theta * SIX; // % SIX; // not exactly mod 6, but looks good enough
+        let range = f.round_to_zero().to_num::<u32>();
+        // let x = rainbow_part(f, range);
+        const ZERO: Extended = Extended::ZERO;
+        const ONE: Extended = Extended::ONE;
+        const TWO: Extended = Extended::lit("2.0");
+        const FOUR: Extended = Extended::lit("4.0");
+        const SIX: Extended = Extended::lit("6.0");
 
         match range {
-            0 => Self::new(1.0, x, 0.0),
-            1 => Self::new(x, 1.0, 0.0),
-            2 => Self::new(0.0, 1.0, x),
-            3 => Self::new(0.0, x, 1.0),
-            4 => Self::new(x, 0.0, 1.0),
-            5 => Self::new(1.0, 0.0, x),
+            0 => Self::from_ext(ONE, f, ZERO),
+            1 => Self::from_ext(TWO - f, ONE, ZERO),
+            2 => Self::from_ext(ZERO, ONE, f - TWO),
+            3 => Self::from_ext(ZERO, FOUR - f, ONE),
+            4 => Self::from_ext(f - FOUR, ZERO, ONE),
+            5 => Self::from_ext(ONE, ZERO, SIX - f),
             _ => unreachable!(),
         }
     }
 
-    pub fn stripe(theta: f32, flag: &Flag<'_>) -> Self {
-        let theta = assume_normal!(theta);
-        let theta = put_in_range(theta);
-        let stripe_size = TWO_PI / (flag.stripe_colors.len() as f32);
-
-        let i_float = theta / stripe_size;
-        let i = unsafe { i_float.to_int_unchecked::<usize>() };
-        let stripe_start = i as f32 * stripe_size;
-        let balance = 1.0 - (i_float - stripe_start / stripe_size);
+    pub fn stripe(theta: ColorV, flag: &Flag<'_>, stripe_size: ColorV) -> Self {
+        let theta = Extended::from_num(theta);
+        let stripe_size = Extended::from_num(stripe_size);
+        let i_float = Extended::from_num(flag.stripe_colors.len()) * theta;
+        let i: usize = i_float.to_num::<u32>() as usize;
+        let stripe_start = Extended::from_num(i) * stripe_size;
+        let balance =
+            Extended::ONE.wrapping_sub(i_float.wrapping_sub(stripe_start / stripe_size));
 
         let colors = &flag.stripe_colors;
         let color = colors[i];
         let next_i = if (i + 1) == colors.len() { 0 } else { i + 1 };
         let next_color = colors[next_i];
 
-        color.mix(next_color, balance, flag.factor)
+        color.mix(next_color, balance.wrapping_to_num(), flag.factor)
     }
 
-    pub fn mix(self, other: Color, balance: f32, factor: f32) -> Color {
-        let balance = assume_normal!(balance);
-        let factor = assume_normal!(factor);
-
-        let balance = balance.powf(factor);
+    pub fn mix(self, other: Color, balance: ColorV, factor: Extended) -> Color {
+        let balance = ColorV::from_num(balance.to_num::<f32>().powf(factor.to_num::<f32>()));
 
         let red = mix_field(self.red(), other.red(), balance);
         let green = mix_field(self.green(), other.green(), balance);
@@ -96,10 +97,10 @@ impl Color {
     }
 }
 
-fn mix_field(first: f32, other: f32, balance: f32) -> f32 {
+fn mix_field(first: ColorV, other: ColorV, balance: ColorV) -> ColorV {
     // this is just a lerp lmao
 
-    const SMALL_BALANCE_THRESHOLD: f32 = 0.125;
+    const SMALL_BALANCE_THRESHOLD: ColorV = ColorV::lit("0.0625");
 
     if balance < SMALL_BALANCE_THRESHOLD {
         return other;
@@ -108,6 +109,9 @@ fn mix_field(first: f32, other: f32, balance: f32) -> f32 {
     // f * b + o * (1 - b) = f * b - o * b + o
     // = (f - o) * b + o
     // = (f - o).mul_add(b, o)
+    // dbg!(first);
+    // dbg!(other);
 
-    (first - other).mul_add(balance, other)
+    // first.wrapping_sub(other).wrapping_mul_add(balance, other)
+    first * balance + other * (ColorV::MAX - balance)
 }

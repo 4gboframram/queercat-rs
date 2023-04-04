@@ -1,40 +1,11 @@
 pub mod color;
 pub mod flag;
 
-#[cfg(debug_assertions)]
-#[macro_export]
-macro_rules! assume {
-    ($cond:expr, $($msg:literal)?) => {
-        if !$cond {
-            std::unreachable!($($msg)?)
-        }
-    }
-}
-
-#[cfg(not(debug_assertions))]
-#[macro_export]
-macro_rules! assume {
-    ($cond:expr, $($msg:literal)?) => {
-        if !$cond {
-            unsafe { std::hint::unreachable_unchecked() }
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! assume_normal {
-    ($e:expr) => {{
-        let e = $e;
-        $crate::assume!(
-            e.is_finite() & !e.is_subnormal(),
-            "only normal floats should occur"
-        );
-        e
-    }};
-}
-
 pub mod driver;
 pub use driver::*;
 pub use flag::*;
-pub use queercat_proc::*;
-// pub mod graphemes;
+use fixed::{types::extra::*, types::U0F32, FixedU32};
+// represents the 0-1 range of color values and theta 
+pub type ColorV = U0F32;
+// big enough to hold an 8-bit integer and do precise calculations
+pub type Extended = FixedU32<U24>;

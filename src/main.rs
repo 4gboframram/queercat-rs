@@ -1,16 +1,17 @@
-use queercat::{flag::*, *, color::Color};
+use queercat::{color::Color, flag::*, *};
 
 use clap::{Args, Parser, ValueEnum};
 use std::fs::File;
-use std::io::{BufReader, Result, Read};
+use std::io::{BufReader, BufWriter, Read, Result, Write};
 use std::path::PathBuf;
 
 /// Concatenate FILE(s), or standard input, to standard output.
 /// With no FILE, or when FILE is -, read standard input.
+//
+// Report all queercat bugs to <https://github.com/4gboframram/queercat-rs/issues>
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
-
     #[command(flatten)]
     flag: FlagArg,
 
@@ -27,7 +28,7 @@ struct Cli {
     offset: f32,
 
     #[command(flatten)]
-    frequency: Frequency
+    frequency: Frequency,
 }
 
 #[derive(Args, Clone, PartialEq, PartialOrd)]
@@ -87,32 +88,14 @@ pub enum FlagChoice {
 #[group(required = false)]
 struct Frequency {
     /// Horizontal rainbow frequency
-    #[arg(default_value_t = 0.23)]
+    #[arg(default_value_t = 0.1)]
     #[arg(short = 'z', long)]
     horizontal_frequency: f32,
 
     /// Vertical rainbow frequency
-    #[arg(default_value_t = 0.1)]
+    #[arg(default_value_t = 0.23)]
     #[arg(short, long)]
     vertical_frequency: f32,
-}
-
-#[derive(Clone, Copy)]
-#[repr(transparent)]
-struct HexColor(u32);
-
-impl HexColor {
-   
-    pub fn red(&self) -> f32 {
-        (((self.0 & 0xff0000) >> 16) as f32) / 255.0
-    }
-    pub fn green(&self) -> f32 {
-        ((self.0 & 0x00ff00) >> 8) as f32 / 255.0
-    }
-    pub fn blue(&self) -> f32 {
-        (self.0 & 0x0000ff) as f32 / 255.0
-    }
-    
 }
 
 pub fn get_file(path: &PathBuf) -> std::io::Result<Box<dyn Read>> {
@@ -129,53 +112,66 @@ fn main() -> Result<()> {
     let (bits24, flag) = if let Some(custom) = cli.flag.custom {
         let ansi_colors_arr = custom.ansi_codes;
         let stripes = custom.stripes;
-        stripe_colors.extend(stripes.iter().map(|x| {
-            let h = HexColor(*x);
-            Color::new(h.red(), h.green(), h.blue())
-        }));
+        stripe_colors.extend(stripes.iter().map(|x| Color::from_hex(*x)));
         ansi_colors.extend(ansi_colors_arr);
         let method = ColorMethod::Stripes;
-        (ansi_colors.is_empty(), Flag {
-            name: "",
-            ansi_colors: &ansi_colors,
-            stripe_colors: &stripe_colors,
-            color_method: method,
-            factor: custom.factor
-        })
+        (
+            ansi_colors.is_empty(),
+            Flag {
+                name: "",
+                ansi_colors: &ansi_colors,
+                stripe_colors: &stripe_colors,
+                color_method: method,
+                factor: queercat::Extended::from_num(custom.factor),
+            },
+        )
     } else {
-         use FlagChoice::*;
-        (cli.bits24,
-        match cli.flag.flag {
-            Rainbow => rainbow(),
-            Transgender => transgender(),
-            NonBinary => nonbinary(),
-            Lesbian => lesbian(),
-            Gay => gay(),
-            Pansexual => pansexual(),
-            Bisexual => bisexual(),
-            GenderFluid => gender_fluid(),
-            Asexual => asexual(),
-            Unlabeled => unlabeled(),
-            Aromantic => aromantic(),
-            Aroace => aroace()
-        })
+        use FlagChoice::*;
+        (
+            cli.bits24,
+            match cli.flag.flag {
+                Rainbow => rainbow(),
+                Transgender => transgender(),
+                NonBinary => nonbinary(),
+                Lesbian => lesbian(),
+                Gay => gay(),
+                Pansexual => pansexual(),
+                Bisexual => bisexual(),
+                GenderFluid => gender_fluid(),
+                Asexual => asexual(),
+                Unlabeled => unlabeled(),
+                Aromantic => aromantic(),
+                Aroace => aroace(),
+            },
+        )
     };
-    let writer = std::io::stdout().lock();
-    let state = State::new(flag, writer).with_offset(cli.offset);
 
+    // If stdin is piped, then we probably want to observe it in real time, so we don't buffer it
+    let writer: Box<dyn Write> = if atty::is(atty::Stream::Stdin) {
+        Box::new(BufWriter::new(std::io::stdout().lock()))
+    } else {
+        Box::new(std::io::stdout().lock())
+    };
+    let freq = cli.frequency;
+    let state =
+        State::new(flag, writer)
+            .with_offset(cli.offset)
+            .with_freq(QueerCatFrequency::Custom(
+                freq.vertical_frequency,
+                freq.horizontal_frequency,
+            ));
 
-     if cli.files.is_empty() {
-         let stdin = std::io::stdin().lock();
-         // avoid heap allocation for dyn Colorizer
-       if bits24 {
-           let colorizer = Bits24Colorizer::new(state);
-           QueerCat::new(colorizer).cat(stdin)
-       } else {
-           let colorizer = AnsiColorizer::new(state);
-           QueerCat::new(colorizer).cat(stdin)
-       }
-    }
-    else {
+    if cli.files.is_empty() {
+        let stdin = std::io::stdin().lock();
+        // avoid heap allocation for dyn Colorizer
+        if bits24 {
+            let colorizer = Bits24Colorizer::new(state);
+            QueerCat::new(colorizer).cat(stdin)
+        } else {
+            let colorizer = AnsiColorizer::new(state);
+            QueerCat::new(colorizer).cat(stdin)
+        }
+    } else {
         use multi_reader::MultiReader;
         let mut readers = Vec::with_capacity(cli.files.len());
         // we can't use ? in iter.map()
@@ -185,14 +181,11 @@ fn main() -> Result<()> {
         }
         let reader = MultiReader::new(readers.drain(..));
         if bits24 {
-           let colorizer = Bits24Colorizer::new(state);
-           QueerCat::new(colorizer).cat(reader)
-       } else {
-           let colorizer = AnsiColorizer::new(state);
-           QueerCat::new(colorizer).cat(reader)
-       }
-        
-        
+            let colorizer = Bits24Colorizer::new(state);
+            QueerCat::new(colorizer).cat(reader)
+        } else {
+            let colorizer = AnsiColorizer::new(state);
+            QueerCat::new(colorizer).cat(reader)
+        }
     }
 }
-
