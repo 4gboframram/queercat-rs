@@ -1,8 +1,7 @@
-
 use crate::flag::Flag;
 use crate::{ColorV, Extended};
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub struct Color {
     red: ColorV,
     green: ColorV,
@@ -16,6 +15,7 @@ const fn trunc(v: Extended) -> ColorV {
         ColorV::const_from_fixed(v)
     }
 }
+
 impl Color {
     pub const fn new(r: ColorV, g: ColorV, b: ColorV) -> Self {
         Self {
@@ -49,7 +49,7 @@ impl Color {
     // essentially just Hsv(theta, 1.0, 1.0) to rgb, but with some quick optimizations that make it inaccurate
     pub fn rainbow(theta: ColorV) -> Self {
         let theta = Extended::from_num(theta);
-        let f = theta * SIX; // % SIX; // not exactly mod 6, but looks good enough
+        let f = theta * SIX;
         let range = f.round_to_zero().to_num::<u32>();
         // let x = rainbow_part(f, range);
         const ZERO: Extended = Extended::ZERO;
@@ -75,8 +75,7 @@ impl Color {
         let i_float = Extended::from_num(flag.stripe_colors.len()) * theta;
         let i: usize = i_float.to_num::<u32>() as usize;
         let stripe_start = Extended::from_num(i) * stripe_size;
-        let balance =
-            Extended::ONE.wrapping_sub(i_float.wrapping_sub(stripe_start / stripe_size));
+        let balance = Extended::ONE.wrapping_sub(i_float.wrapping_sub(stripe_start / stripe_size));
 
         let colors = &flag.stripe_colors;
         let color = colors[i];
@@ -114,4 +113,25 @@ fn mix_field(first: ColorV, other: ColorV, balance: ColorV) -> ColorV {
 
     // first.wrapping_sub(other).wrapping_mul_add(balance, other)
     first * balance + other * (ColorV::MAX - balance)
+}
+
+impl std::fmt::Display for Color {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            fmt,
+            "\x1b[38;2;{};{};{}m",
+            (Extended::from_num(self.red()).wrapping_shl(8)).to_num::<u32>(),
+            (Extended::from_num(self.green()).wrapping_shl(8)).to_num::<u32>(),
+            (Extended::from_num(self.blue()).wrapping_shl(8)).to_num::<u32>()
+        )
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Default)]
+pub struct AnsiColor(pub u8);
+
+impl std::fmt::Display for AnsiColor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "\x1b[38;5;{}m", self.0)
+    }
 }

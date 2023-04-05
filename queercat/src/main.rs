@@ -98,13 +98,31 @@ struct Frequency {
     vertical_frequency: f32,
 }
 
-pub fn get_file(path: &PathBuf) -> std::io::Result<Box<dyn Read>> {
+pub fn get_file(path: &PathBuf) -> Result<Box<dyn Read>> {
     if path == std::path::Path::new("-") {
         Ok(Box::new(std::io::stdin().lock()))
     } else {
         Ok(Box::new(BufReader::new(File::open(path)?)))
     }
 }
+
+pub fn make_24bit<'a, W: Write>(
+    writer: W,
+    flag: Flag<'a>,
+    freq: QueerCatFrequency,
+) -> QueerCat<'a, W, Bits24Colorizer> {
+    let c = Bits24Colorizer::new(freq);
+    QueerCat::new(c, writer, flag.clone())
+}
+pub fn make_ansi<'a, W: Write>(
+    writer: W,
+    flag: Flag<'a>,
+    freq: QueerCatFrequency,
+) -> QueerCat<'a, W, AnsiColorizer> {
+    let c = AnsiColorizer::new(flag.ansi_colors.len() as u32, freq);
+    QueerCat::new(c, writer, flag.clone())
+}
+
 fn main() -> Result<()> {
     let cli = Cli::parse();
     let mut stripe_colors = Vec::new();
@@ -152,24 +170,16 @@ fn main() -> Result<()> {
     } else {
         Box::new(std::io::stdout().lock())
     };
+
     let freq = cli.frequency;
-    let state =
-        State::new(flag, writer)
-            .with_offset(cli.offset)
-            .with_freq(QueerCatFrequency::Custom(
-                freq.vertical_frequency,
-                freq.horizontal_frequency,
-            ));
+    let freq = QueerCatFrequency::Custom(freq.vertical_frequency, freq.horizontal_frequency);
 
     if cli.files.is_empty() {
         let stdin = std::io::stdin().lock();
-        // avoid heap allocation for dyn Colorizer
         if bits24 {
-            let colorizer = Bits24Colorizer::new(state);
-            QueerCat::new(colorizer).cat(stdin)
+            make_24bit(writer, flag, freq).cat(stdin)
         } else {
-            let colorizer = AnsiColorizer::new(state);
-            QueerCat::new(colorizer).cat(stdin)
+            make_ansi(writer, flag, freq).cat(stdin)
         }
     } else {
         use multi_reader::MultiReader;
@@ -181,11 +191,9 @@ fn main() -> Result<()> {
         }
         let reader = MultiReader::new(readers.drain(..));
         if bits24 {
-            let colorizer = Bits24Colorizer::new(state);
-            QueerCat::new(colorizer).cat(reader)
+            make_24bit(writer, flag, freq).cat(reader)
         } else {
-            let colorizer = AnsiColorizer::new(state);
-            QueerCat::new(colorizer).cat(reader)
+            make_ansi(writer, flag, freq).cat(reader)
         }
     }
 }

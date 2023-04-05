@@ -48,7 +48,10 @@ I then looked at the code and noticed many flaws that hindered performance such 
 
 *the funny thing is that for ansi colors, there was an attempt to cache, but assigned to a local instead of writing to a pointer
 ## Bug Reporting / Feature Requests
-- You can report any bugs you find or any features you would like added at the [github repo](https://github.com/4gboframram/queercat-rs/issues)
+- You can report any bugs you find or any features you would like added at the [github repo](https://github.com/4gboframram/queercat-rs/issues).
+
+ **Performance regressions are also considered bugs.** queercat-rs prides itself in being the fastest pride flag printer, so performance is of utmost importance. If you have any optimization ideas, please make an issue, or even better, a pull request.
+ 
 ## Acknowledgements
 Huge thanks to Elsa002 for making the [original queercat](https://github.com/Elsa002/queercat). Without the original queercat, there would be no rust rewrite.
 I would not have been able to make a rewrite nor write this code from scratch without without the original code. 
@@ -70,6 +73,7 @@ As a nod to the original project, this code is released under the same license: 
 - Publish to `crates.io` when version `1.0.0` is released
 - Add screenshots
 - Optimize the grapheme iterator, as profiling says that it takes most of the cpu time (other than io)
+- Document the library api
 - Add more queer easter eggs
 - Maybe interpolate colors in hsv color space instead of rgb
 - Maybe add a config file for custom flags that can be loaded by name later

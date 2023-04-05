@@ -13,7 +13,6 @@ pub struct Flag<'a> {
     pub color_method: ColorMethod,
 }
 
-
 use unstringify::unstringify;
 
 macro_rules! stripe_flag {
