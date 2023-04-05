@@ -1,6 +1,6 @@
 use crate::flag::Flag;
 
-use crate::colorizer::*;
+use crate::colorizer::Colorizer;
 use std::io::{self, Read, Write};
 
 pub struct QueerCat<'a, W: Write, C: Colorizer> {
@@ -12,6 +12,7 @@ pub struct QueerCat<'a, W: Write, C: Colorizer> {
 use unicode_reader::{CodePoints, Graphemes};
 
 impl<'a, W: Write, C: Colorizer> QueerCat<'a, W, C> {
+    #[must_use]
     pub const fn new(colorizer: C, writer: W, flag: Flag<'a>) -> Self {
         Self {
             colorizer,
@@ -33,12 +34,14 @@ impl<'a, W: Write, C: Colorizer> QueerCat<'a, W, C> {
                 self.writer.write_fmt(format_args!("{}", color))?;
                 prev_color = color;
             }
-            self.writer.write(gr.as_bytes())?;
+            self.writer.write_all(gr.as_bytes())?;
         }
 
         Ok(())
     }
-
+    
+    /// # Errors
+    /// Returns `Err` when writing with `self.writer` or reading `file` fails
     pub fn cat<R: Read>(&mut self, file: R) -> Result<(), io::Error> {
         let res = self.cat_impl(file);
         self.writer

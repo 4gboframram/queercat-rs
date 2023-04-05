@@ -1,3 +1,4 @@
+#![allow(clippy::unreadable_literal)]
 #[derive(Copy, Clone, Debug)]
 pub enum ColorMethod {
     Stripes,
@@ -276,6 +277,7 @@ stripe_flag! {
     },
 }
 
+#[must_use]
 pub const fn rainbow() -> Flag<'static> {
     Flag {
         name: "rainbow",

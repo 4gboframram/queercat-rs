@@ -1,7 +1,9 @@
+#![allow(clippy::must_use_candidate)]
+
 use crate::flag::Flag;
 use crate::{ColorV, Extended};
 
-#[derive(Clone, Copy, Debug, PartialEq, Default)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub struct Color {
     red: ColorV,
     green: ColorV,
@@ -17,6 +19,7 @@ const fn trunc(v: Extended) -> ColorV {
 }
 
 impl Color {
+    #[must_use]
     pub const fn new(r: ColorV, g: ColorV, b: ColorV) -> Self {
         Self {
             red: r,
@@ -27,10 +30,11 @@ impl Color {
     fn from_ext(r: Extended, g: Extended, b: Extended) -> Self {
         Self::new(trunc(r), trunc(g), trunc(b))
     }
+    #[must_use]
     pub const fn from_hex(hex: u32) -> Self {
-        let r = (hex & 0xff0000) << 8;
-        let g = (hex & 0x00ff00) << 16;
-        let b = (hex & 0x0000ff) << 24;
+        let r = (hex & 0x00ff_0000) << 8;
+        let g = (hex & 0x0000_ff00) << 16;
+        let b = (hex & 0x0000_00ff) << 24;
         let r = ColorV::from_bits(r);
         let g = ColorV::from_bits(g);
         let b = ColorV::from_bits(b);
@@ -47,16 +51,18 @@ impl Color {
     }
 
     // essentially just Hsv(theta, 1.0, 1.0) to rgb, but with some quick optimizations that make it inaccurate
+    #[must_use]
     pub fn rainbow(theta: ColorV) -> Self {
-        let theta = Extended::from_num(theta);
-        let f = theta * SIX;
-        let range = f.round_to_zero().to_num::<u32>();
-        // let x = rainbow_part(f, range);
         const ZERO: Extended = Extended::ZERO;
         const ONE: Extended = Extended::ONE;
         const TWO: Extended = Extended::lit("2.0");
         const FOUR: Extended = Extended::lit("4.0");
         const SIX: Extended = Extended::lit("6.0");
+        
+        let theta = Extended::from_num(theta);
+        let f = theta * SIX;
+        let range = f.round_to_zero().to_num::<u32>();
+        // let x = rainbow_part(f, range);
 
         match range {
             0 => Self::from_ext(ONE, f, ZERO),
@@ -69,6 +75,7 @@ impl Color {
         }
     }
 
+    #[must_use]
     pub fn stripe(theta: ColorV, flag: &Flag<'_>, stripe_size: ColorV) -> Self {
         let theta = Extended::from_num(theta);
         let stripe_size = Extended::from_num(stripe_size);
@@ -85,6 +92,7 @@ impl Color {
         color.mix(next_color, balance.wrapping_to_num(), flag.factor)
     }
 
+    #[must_use]
     pub fn mix(self, other: Color, balance: ColorV, factor: Extended) -> Color {
         let balance = ColorV::from_num(balance.to_num::<f32>().powf(factor.to_num::<f32>()));
 
@@ -127,7 +135,8 @@ impl std::fmt::Display for Color {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Default)]
+#[allow(clippy::module_name_repetitions)]
+#[derive(Clone, Copy, PartialEq, Default, Eq)]
 pub struct AnsiColor(pub u8);
 
 impl std::fmt::Display for AnsiColor {

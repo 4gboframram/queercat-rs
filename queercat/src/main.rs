@@ -1,4 +1,8 @@
-use queercat_lib::{color::Color, flag::*, *};
+#![deny(clippy::pedantic)]
+#![allow(clippy::enum_glob_use)]
+
+#[allow(clippy::wildcard_imports)] // the functions are automatically generated and do not affect readability at all
+use queercat_lib::{color::Color, flag::*, Ansi, Bits24, QueerCat, QueerCatFrequency};
 
 use clap::{Args, Parser, ValueEnum};
 use std::fs::File;
@@ -60,7 +64,7 @@ pub struct FlagArg {
     custom: Option<CustomFlag>,
 }
 
-#[derive(Clone, PartialEq, PartialOrd, ValueEnum)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, ValueEnum)]
 pub enum FlagChoice {
     Rainbow,
     #[value(alias("trans"), alias("tra"))]
@@ -98,7 +102,7 @@ struct Frequency {
     vertical_frequency: f32,
 }
 
-pub fn get_file(path: &PathBuf) -> Result<Box<dyn Read>> {
+fn get_file(path: &PathBuf) -> Result<Box<dyn Read>> {
     if path == std::path::Path::new("-") {
         Ok(Box::new(std::io::stdin().lock()))
     } else {
@@ -106,21 +110,23 @@ pub fn get_file(path: &PathBuf) -> Result<Box<dyn Read>> {
     }
 }
 
-pub fn make_24bit<'a, W: Write>(
+fn make_24bit<W: Write>(
     writer: W,
-    flag: Flag<'a>,
+    flag: Flag<'_>,
     freq: QueerCatFrequency,
-) -> QueerCat<'a, W, Bits24Colorizer> {
-    let c = Bits24Colorizer::new(freq);
-    QueerCat::new(c, writer, flag.clone())
+) -> QueerCat<'_, W, Bits24> {
+    let c = Bits24::new(freq);
+    QueerCat::new(c, writer, flag)
 }
-pub fn make_ansi<'a, W: Write>(
+
+fn make_ansi<W: Write>(
     writer: W,
-    flag: Flag<'a>,
+    flag: Flag<'_>,
     freq: QueerCatFrequency,
-) -> QueerCat<'a, W, AnsiColorizer> {
-    let c = AnsiColorizer::new(flag.ansi_colors.len() as u32, freq);
-    QueerCat::new(c, writer, flag.clone())
+) -> QueerCat<'_, W, Ansi> {
+    #[allow(clippy::cast_possible_truncation)]
+    let c = Ansi::new(flag.ansi_colors.len() as u32, freq);
+    QueerCat::new(c, writer, flag)
 }
 
 fn main() -> Result<()> {
@@ -182,6 +188,7 @@ fn main() -> Result<()> {
             make_ansi(writer, flag, freq).cat(stdin)
         }
     } else {
+        
         use multi_reader::MultiReader;
         let mut readers = Vec::with_capacity(cli.files.len());
         // we can't use ? in iter.map()

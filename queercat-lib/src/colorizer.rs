@@ -1,3 +1,5 @@
+#![allow(clippy::must_use_candidate)]
+
 use crate::color::{AnsiColor, Color};
 use crate::flag::Flag;
 use crate::{ColorV, Extended};
@@ -13,9 +15,11 @@ pub enum QueerCatFrequency {
     Horizontal(f32),
     Custom(f32, f32),
 }
+
 impl QueerCatFrequency {
     pub fn as_freq(self) -> (Extended, Extended) {
-        use QueerCatFrequency::*;
+        use QueerCatFrequency::{Aaaaaaaaaaaaa, Custom, Fast, Horizontal, HyperGay, Original, UltraHyperGay, Vertical};
+        
         let (freq_v, freq_h) = match self {
             Original => (0.23, 0.1),
             Fast => (0.4, 0.4),
@@ -47,14 +51,15 @@ pub trait Colorizer {
     fn update_state(&mut self, grapheme: &str) -> Self::State;
 }
 
-pub struct Bits24Colorizer {
+pub struct Bits24 {
     theta: ColorV,
     col_theta: ColorV,
     freq_v: Extended,
     freq_h: Extended,
 }
 
-impl Bits24Colorizer {
+impl Bits24 {
+    #[must_use]
     pub fn new(freq: QueerCatFrequency) -> Self {
         let (freq_h, freq_v) = freq.as_freq();
         Self {
@@ -64,13 +69,15 @@ impl Bits24Colorizer {
             col_theta: ColorV::ZERO,
         }
     }
+    #[must_use]
     pub fn with_offset(mut self, offset: f32) -> Self {
         self.theta += ColorV::wrapping_from_num(offset / 12.0);
         self
     }
 }
 
-impl Colorizer for Bits24Colorizer {
+
+impl Colorizer for Bits24 {
     type State = ColorV;
     type Color = Color;
     type Resetter = TerminalResetter;
@@ -86,25 +93,23 @@ impl Colorizer for Bits24Colorizer {
         }
     }
     fn update_state(&mut self, grapheme: &str) -> Self::State {
-        match grapheme.as_bytes() {
-            [b'\n'] => {
-                self.theta = self
+        if let [b'\n'] = grapheme.as_bytes() {
+            self.theta = self
                     .theta
                     .wrapping_add(ColorV::wrapping_from_num(self.freq_v));
                 self.theta = self.theta.wrapping_sub(self.col_theta);
                 self.col_theta = ColorV::ZERO;
-            }
-            _ => {
-                let theta = ColorV::wrapping_from_num(self.freq_h);
+        }
+        else {
+            let theta = ColorV::wrapping_from_num(self.freq_h);
                 self.col_theta = self.col_theta.wrapping_add(theta);
                 self.theta = self.theta.wrapping_add(theta);
-            }
-        };
+        }
         self.theta
     }
 }
 
-pub struct AnsiColorizer {
+pub struct Ansi {
     line: u32,
     col: u32,
     flag_len: u32,
@@ -113,7 +118,7 @@ pub struct AnsiColorizer {
     freq_h: Extended,
 }
 
-impl Colorizer for AnsiColorizer {
+impl Colorizer for Ansi {
     type Color = AnsiColor;
     type Resetter = TerminalResetter;
     type State = u32;
@@ -123,15 +128,12 @@ impl Colorizer for AnsiColorizer {
     }
 
     fn update_state(&mut self, grapheme: &str) -> Self::State {
-        match grapheme.as_bytes() {
-            [b'\n'] => {
-                self.col = 0;
-                self.line += 1;
-            }
-            _ => {
-                self.col += 1;
-            }
-        };
+        if let [b'\n'] = grapheme.as_bytes() {
+            self.col = 0;
+            self.line += 1;
+        } else {
+            self.col += 1;
+        }
         (((self.offset.wrapping_mul_int(self.flag_len))
             + (self.col * self.freq_v + self.line * self.freq_h))
             .to_num::<u32>())
@@ -139,7 +141,8 @@ impl Colorizer for AnsiColorizer {
     }
 }
 
-impl AnsiColorizer {
+impl Ansi {
+    #[must_use]
     pub fn new(flag_len: u32, freq: QueerCatFrequency) -> Self {
         let (freq_h, freq_v) = freq.as_freq();
         Self {
@@ -151,7 +154,7 @@ impl AnsiColorizer {
             offset: Extended::ZERO,
         }
     }
-
+#[must_use]
     pub fn with_offset(self, offset: f32) -> Self {
         let offset = Extended::from_num(offset);
         Self { offset, ..self }
