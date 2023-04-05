@@ -1,4 +1,4 @@
-use queercat::{color::Color, flag::*, *};
+use queercat_lib::{color::Color, flag::*, *};
 
 use clap::{Args, Parser, ValueEnum};
 use std::fs::File;
@@ -122,7 +122,7 @@ fn main() -> Result<()> {
                 ansi_colors: &ansi_colors,
                 stripe_colors: &stripe_colors,
                 color_method: method,
-                factor: queercat::Extended::from_num(custom.factor),
+                factor: queercat_lib::Extended::from_num(custom.factor),
             },
         )
     } else {

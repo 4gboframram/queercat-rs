@@ -1,29 +1,6 @@
-[package]
-name = "queercat"
-version = "0.1.1"
-authors = ["4gboframram"]
-edition = "2021"
+[workspace]
 
-
-[lib]
-name = "queercat"
-path = "src/lib.rs"
-
-[[bin]]
-name = "queercat"
-path = "src/main.rs"
-
-
-[dependencies]
-clap = { version = "4.2.1", features = ["derive"] }
-unicode_reader = "1.0.2"
-unstringify = "0.1.4"
-multi_reader = "0.1.0"
-clap-num = "1.0.2"
-fixed = "1.23.1"
-atty = "0.2.14"
-
-
-[profile.fat]
-inherits = "release"
-lto = "fat"
+members = [
+    "queercat",
+    "queercat-lib"
+]

@@ -1,6 +1,6 @@
 # queercat-rs
 Pride flags in the terminal, but rusty :3 
-
+## Usage
 ```
 Concatenate FILE(s), or standard input, to standard output. With no FILE, or when FILE is -, read standard input
 
@@ -33,6 +33,10 @@ Options:
 ```
 
 **NOTE** for `-a` and `-s`, you have to write the flag multiple times
+## Installation
+- Release binaries are provided for x86-64 windows, mac, and linux
+- You can build the cli from source with `cargo install --path ./queercat`
+
 ## Motivation
 I was working on a pride-themed shell and I wanted to have [queercat](https://github.com/Elsa002/queercat) as a builtin command and to use it as a library for internals. 
 

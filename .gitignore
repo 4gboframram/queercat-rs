@@ -4,5 +4,5 @@ replit.nix
 .upm
 target
 queercat.c
-queercat
+queercat-c
 .upm
