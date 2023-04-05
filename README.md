@@ -1,4 +1,6 @@
 # queercat-rs
+[![Build](https://github.com/4gboframram/queercat-rs/actions/workflows/rust.yml/badge.svg)](https://github.com/4gboframram/queercat-rs/actions/workflows/rust.yml)
+
 Pride flags in the terminal, but rusty :3 
 ## Usage
 ```
