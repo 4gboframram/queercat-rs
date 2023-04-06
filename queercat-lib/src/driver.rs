@@ -39,7 +39,7 @@ impl<'a, W: Write, C: Colorizer> QueerCat<'a, W, C> {
 
         Ok(())
     }
-    
+
     /// # Errors
     /// Returns `Err` when writing with `self.writer` or reading `file` fails
     pub fn cat<R: Read>(&mut self, file: R) -> Result<(), io::Error> {
@@ -72,7 +72,9 @@ impl<I: Iterator<Item = Result<u8, io::Error>>> Iterator for EscapeSkipper<I> {
                         return self.next(); // recursively skip escapes. this will not stack overflow because of tail-call optimization
                     }
                     Ok(_) => {}
-                    v => { return Some(v); }
+                    v => {
+                        return Some(v);
+                    }
                 }
             }
         }

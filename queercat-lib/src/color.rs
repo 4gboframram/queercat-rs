@@ -58,7 +58,7 @@ impl Color {
         const TWO: Extended = Extended::lit("2.0");
         const FOUR: Extended = Extended::lit("4.0");
         const SIX: Extended = Extended::lit("6.0");
-        
+
         let theta = Extended::from_num(theta);
         let f = theta * SIX;
         let range = f.round_to_zero().to_num::<u32>();
@@ -116,8 +116,6 @@ fn mix_field(first: ColorV, other: ColorV, balance: ColorV) -> ColorV {
     // f * b + o * (1 - b) = f * b - o * b + o
     // = (f - o) * b + o
     // = (f - o).mul_add(b, o)
-    // dbg!(first);
-    // dbg!(other);
 
     // first.wrapping_sub(other).wrapping_mul_add(balance, other)
     first * balance + other * (ColorV::MAX - balance)

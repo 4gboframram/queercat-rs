@@ -18,8 +18,10 @@ pub enum QueerCatFrequency {
 
 impl QueerCatFrequency {
     pub fn as_freq(self) -> (Extended, Extended) {
-        use QueerCatFrequency::{Aaaaaaaaaaaaa, Custom, Fast, Horizontal, HyperGay, Original, UltraHyperGay, Vertical};
-        
+        use QueerCatFrequency::{
+            Aaaaaaaaaaaaa, Custom, Fast, Horizontal, HyperGay, Original, UltraHyperGay, Vertical,
+        };
+
         let (freq_v, freq_h) = match self {
             Original => (0.23, 0.1),
             Fast => (0.4, 0.4),
@@ -76,7 +78,6 @@ impl Bits24 {
     }
 }
 
-
 impl Colorizer for Bits24 {
     type State = ColorV;
     type Color = Color;
@@ -95,15 +96,14 @@ impl Colorizer for Bits24 {
     fn update_state(&mut self, grapheme: &str) -> Self::State {
         if let [b'\n'] = grapheme.as_bytes() {
             self.theta = self
-                    .theta
-                    .wrapping_add(ColorV::wrapping_from_num(self.freq_v));
-                self.theta = self.theta.wrapping_sub(self.col_theta);
-                self.col_theta = ColorV::ZERO;
-        }
-        else {
+                .theta
+                .wrapping_add(ColorV::wrapping_from_num(self.freq_v));
+            self.theta = self.theta.wrapping_sub(self.col_theta);
+            self.col_theta = ColorV::ZERO;
+        } else {
             let theta = ColorV::wrapping_from_num(self.freq_h);
-                self.col_theta = self.col_theta.wrapping_add(theta);
-                self.theta = self.theta.wrapping_add(theta);
+            self.col_theta = self.col_theta.wrapping_add(theta);
+            self.theta = self.theta.wrapping_add(theta);
         }
         self.theta
     }
@@ -154,7 +154,7 @@ impl Ansi {
             offset: Extended::ZERO,
         }
     }
-#[must_use]
+    #[must_use]
     pub fn with_offset(self, offset: f32) -> Self {
         let offset = Extended::from_num(offset);
         Self { offset, ..self }

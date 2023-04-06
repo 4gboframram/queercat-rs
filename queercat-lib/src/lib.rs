@@ -1,6 +1,5 @@
 #![deny(clippy::pedantic)]
 
-
 pub mod color;
 pub mod flag;
 

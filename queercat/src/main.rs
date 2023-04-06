@@ -1,7 +1,8 @@
 #![deny(clippy::pedantic)]
 #![allow(clippy::enum_glob_use)]
 
-#[allow(clippy::wildcard_imports)] // the functions are automatically generated and do not affect readability at all
+#[allow(clippy::wildcard_imports)]
+// the functions are automatically generated and do not affect readability at all
 use queercat_lib::{color::Color, flag::*, Ansi, Bits24, QueerCat, QueerCatFrequency};
 
 use clap::{Args, Parser, ValueEnum};
@@ -114,7 +115,7 @@ fn make_24bit<W: Write>(
     writer: W,
     flag: Flag<'_>,
     freq: QueerCatFrequency,
-    offset: f32
+    offset: f32,
 ) -> QueerCat<'_, W, Bits24> {
     let c = Bits24::new(freq).with_offset(offset);
     QueerCat::new(c, writer, flag)
@@ -124,7 +125,7 @@ fn make_ansi<W: Write>(
     writer: W,
     flag: Flag<'_>,
     freq: QueerCatFrequency,
-    offset: f32
+    offset: f32,
 ) -> QueerCat<'_, W, Ansi> {
     #[allow(clippy::cast_possible_truncation)]
     let c = Ansi::new(flag.ansi_colors.len() as u32, freq).with_offset(offset);
@@ -191,7 +192,6 @@ fn main() -> Result<()> {
             make_ansi(writer, flag, freq, offset).cat(stdin)
         }
     } else {
-        
         use multi_reader::MultiReader;
         let mut readers = Vec::with_capacity(cli.files.len());
         // we can't use ? in iter.map()
