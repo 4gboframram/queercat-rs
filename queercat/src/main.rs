@@ -114,8 +114,9 @@ fn make_24bit<W: Write>(
     writer: W,
     flag: Flag<'_>,
     freq: QueerCatFrequency,
+    offset: f32
 ) -> QueerCat<'_, W, Bits24> {
-    let c = Bits24::new(freq);
+    let c = Bits24::new(freq).with_offset(offset);
     QueerCat::new(c, writer, flag)
 }
 
@@ -123,9 +124,10 @@ fn make_ansi<W: Write>(
     writer: W,
     flag: Flag<'_>,
     freq: QueerCatFrequency,
+    offset: f32
 ) -> QueerCat<'_, W, Ansi> {
     #[allow(clippy::cast_possible_truncation)]
-    let c = Ansi::new(flag.ansi_colors.len() as u32, freq);
+    let c = Ansi::new(flag.ansi_colors.len() as u32, freq).with_offset(offset);
     QueerCat::new(c, writer, flag)
 }
 
@@ -179,13 +181,14 @@ fn main() -> Result<()> {
 
     let freq = cli.frequency;
     let freq = QueerCatFrequency::Custom(freq.vertical_frequency, freq.horizontal_frequency);
+    let offset = cli.offset;
 
     if cli.files.is_empty() {
         let stdin = std::io::stdin().lock();
         if bits24 {
-            make_24bit(writer, flag, freq).cat(stdin)
+            make_24bit(writer, flag, freq, offset).cat(stdin)
         } else {
-            make_ansi(writer, flag, freq).cat(stdin)
+            make_ansi(writer, flag, freq, offset).cat(stdin)
         }
     } else {
         
@@ -198,9 +201,9 @@ fn main() -> Result<()> {
         }
         let reader = MultiReader::new(readers.drain(..));
         if bits24 {
-            make_24bit(writer, flag, freq).cat(reader)
+            make_24bit(writer, flag, freq, offset).cat(reader)
         } else {
-            make_ansi(writer, flag, freq).cat(reader)
+            make_ansi(writer, flag, freq, offset).cat(reader)
         }
     }
 }
