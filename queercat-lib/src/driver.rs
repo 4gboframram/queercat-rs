@@ -31,7 +31,7 @@ impl<'a, W: Write, C: Colorizer> QueerCat<'a, W, C> {
             let state = self.colorizer.update_state(&gr);
             let color = C::calculate_color(state, &self.flag);
             if color != prev_color {
-                self.writer.write_fmt(format_args!("{}", color))?;
+                self.writer.write_fmt(format_args!("{color}"))?;
                 prev_color = color;
             }
             self.writer.write_all(gr.as_bytes())?;
@@ -62,28 +62,20 @@ impl<I: Iterator<Item = Result<u8, io::Error>>> Iterator for EscapeSkipper<I> {
     type Item = Result<u8, io::Error>;
     fn next(&mut self) -> Option<Self::Item> {
         let item = self.0.next()?;
-        let i = match item {
-            Ok(v) => v,
-            Err(_) => {
+        if let Ok(b) = item {
+            if b != 0x1b {
                 return Some(item);
             }
-        };
-
-        if i == b'\x1b' {
-            while let Some(n) = self.0.next() {
-                match n {
-                    Ok(c) if c.is_ascii_alphabetic() => {
-                        return self.0.next();
+            loop {
+                match self.0.next()? {
+                    Ok(n) if n.is_ascii_alphabetic() => {
+                        return self.next(); // recursively skip escapes. this will not stack overflow because of tail-call optimization
                     }
-                    Err(_) => {
-                        return Some(n);
-                    }
-                    _ => {}
+                    Ok(_) => {}
+                    v => { return Some(v); }
                 }
             }
-            None
-        } else {
-            Some(Ok(i))
         }
+        Some(item)
     }
 }
