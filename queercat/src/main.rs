@@ -7,7 +7,7 @@ use queercat_lib::{color::Color, flag::*, Ansi, Bits24, QueerCat, QueerCatFreque
 
 use clap::{Args, Parser, ValueEnum};
 use std::fs::File;
-use std::io::{BufReader, BufWriter, Read, Result, Write};
+use std::io::{BufRead, BufReader, BufWriter, Result, Write};
 use std::path::PathBuf;
 
 /// Concatenate FILE(s), or standard input, to standard output.
@@ -103,7 +103,7 @@ struct Frequency {
     vertical_frequency: f32,
 }
 
-fn get_file(path: &PathBuf) -> Result<Box<dyn Read>> {
+fn get_file(path: &PathBuf) -> Result<Box<dyn BufRead>> {
     if path == std::path::Path::new("-") {
         Ok(Box::new(std::io::stdin().lock()))
     } else {
@@ -199,7 +199,7 @@ fn main() -> Result<()> {
             let file = get_file(&file)?;
             readers.push(file);
         }
-        let reader = MultiReader::new(readers.drain(..));
+        let reader = BufReader::new(MultiReader::new(readers.drain(..)));
         if bits24 {
             make_24bit(writer, flag, freq, offset).cat(reader)
         } else {

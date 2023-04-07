@@ -6,9 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-unicode_reader = "1.0.2"
 unstringify = "0.1.4"
 fixed = "1.23.1"
+unicode-segmentation = "1.10.1"
+memchr = "2.5.0"
 
 [[bench]]
 name = "queercat_bench"
