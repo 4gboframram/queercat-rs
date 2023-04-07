@@ -60,6 +60,8 @@ I would not have been able to make a rewrite nor write this code from scratch wi
 
 As a nod to the original project, this code is released under the same license: the `Unlicense`, and is dedicated to the public domain.
 ## Changelog
+- **v0.1.2**:
+   - Fixed bug where sequential escape sequences would not be skipped
 - **v0.1.1**:
   - Updated README
   - `-o`, `-z`, and `-v` flags now work

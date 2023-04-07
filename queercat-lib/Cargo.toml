@@ -9,3 +9,10 @@ edition = "2021"
 unicode_reader = "1.0.2"
 unstringify = "0.1.4"
 fixed = "1.23.1"
+
+[[bench]]
+name = "queercat_bench"
+harness = false
+
+[dev-dependencies]
+criterion = "0.3"
