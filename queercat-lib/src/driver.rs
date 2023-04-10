@@ -1,15 +1,14 @@
-use crate::flag::Flag;
-
 use crate::colorizer::Colorizer;
+use crate::flag::Flag;
 use std::io::{self, BufRead, Write};
+
+use unicode_segmentation::UnicodeSegmentation;
 
 pub struct QueerCat<'a, W: Write, C: Colorizer> {
     colorizer: C,
     writer: W,
     flag: Flag<'a>,
 }
-
-use unicode_segmentation::UnicodeSegmentation;
 
 impl<'a, W: Write, C: Colorizer> QueerCat<'a, W, C> {
     #[must_use]
@@ -22,8 +21,6 @@ impl<'a, W: Write, C: Colorizer> QueerCat<'a, W, C> {
     }
 
     fn cat_impl<R: BufRead>(&mut self, mut file: R) -> Result<(), io::Error> {
-        // let iter = EscapeSkipper::new(file.bytes());
-        // let mut file = BufReader::new(file);
         let mut alt_buf; // when there's an escape
         let mut remaining: Vec<u8> = Vec::new();
         let mut prev_color: C::Color = Default::default();
@@ -60,7 +57,9 @@ impl<'a, W: Write, C: Colorizer> QueerCat<'a, W, C> {
                 match std::str::from_utf8(buf) {
                     Ok(str) => process_graphemes(str)?,
                     Err(e) => {
-                remaining.extend_from_slice(&buf[e.valid_up_to()..]);
+                        let (s, tail) = buf.split_at(e.valid_up_to());
+                        process_graphemes(std::str::from_utf8(s).unwrap())?;
+                        remaining.extend_from_slice(tail);
                     }
                 }
             } else {
@@ -74,6 +73,7 @@ impl<'a, W: Write, C: Colorizer> QueerCat<'a, W, C> {
                         let (s, rem) = remaining.split_at(e.valid_up_to());
                         let str = std::str::from_utf8(s).unwrap();
                         process_graphemes(str)?;
+                        // avoid borrow issue
                         let mut new_remaining = Vec::with_capacity(rem.len());
                         new_remaining.extend_from_slice(rem);
                         remaining = new_remaining;
@@ -87,7 +87,7 @@ impl<'a, W: Write, C: Colorizer> QueerCat<'a, W, C> {
     }
 
     /// # Errors
-    /// Returns `Err` when writing with `self.writer` or reading `file` fails
+    /// Returns `Err` when writing with `self.writer`, reading `file` fails, or input is not valid utf-8
     pub fn cat<R: BufRead>(&mut self, file: R) -> Result<(), io::Error> {
         let res = self.cat_impl(file);
         self.writer

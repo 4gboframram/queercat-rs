@@ -62,7 +62,6 @@ impl Color {
         let theta = Extended::from_num(theta);
         let f = theta * SIX;
         let range = f.round_to_zero().to_num::<u32>();
-        // let x = rainbow_part(f, range);
 
         match range {
             0 => Self::from_ext(ONE, f, ZERO),
