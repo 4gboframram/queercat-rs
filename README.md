@@ -37,8 +37,10 @@ Options:
 **NOTE** for `-a` and `-s`, you have to write the flag multiple times
 ## Screenshots
 Screenfetch with the trans flag:
+
 ![image](./screenshots/screenfetch-1.png)
 Screenfetch with the lesbian flag in 24-bit mode with a custom horizontal frequency:
+
 ![image](./screenshots/screenfetch-2.png)
 
 ## Installation
