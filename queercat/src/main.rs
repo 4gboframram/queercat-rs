@@ -25,7 +25,7 @@ struct Cli {
     /// The files to read
     files: Vec<PathBuf>,
 
-    /// Whether to use 24 bit RGB color. This may be slower and incompatible with some terminals, but it looks amazing
+    /// Whether to use 24 bit RGB color. This may be slower and incompatible with older terminals.
     #[arg(required = false, short = 'b', long = "24bit")]
     bits24: bool,
 
@@ -49,6 +49,7 @@ pub struct CustomFlag {
     #[arg(short, long, conflicts_with = "stripes")]
     ansi_codes: Vec<u8>,
 
+    /// How long it takes to blend between stripe colors, with lower values taking longer to blend. Maxes out at just below 256.
     #[arg(long)]
     #[arg(default_value_t = 4.0)]
     factor: f32,
@@ -88,6 +89,7 @@ pub enum FlagChoice {
     #[value(alias("aro"))]
     Aromantic,
     Aroace,
+    Dutch,
 }
 
 #[derive(Args, Clone, PartialEq, PartialOrd)]
@@ -170,6 +172,7 @@ fn main() -> Result<()> {
                 Unlabeled => unlabeled(),
                 Aromantic => aromantic(),
                 Aroace => aroace(),
+                Dutch => dutch(),
             },
         )
     };

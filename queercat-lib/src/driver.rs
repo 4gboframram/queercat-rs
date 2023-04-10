@@ -1,9 +1,12 @@
+//! The main driver for queercat
+
 use crate::colorizer::Colorizer;
 use crate::flag::Flag;
 use std::io::{self, BufRead, Write};
 
 use unicode_segmentation::UnicodeSegmentation;
 
+/// The main driver struct
 pub struct QueerCat<'a, W: Write, C: Colorizer> {
     colorizer: C,
     writer: W,
@@ -21,7 +24,7 @@ impl<'a, W: Write, C: Colorizer> QueerCat<'a, W, C> {
     }
 
     fn cat_impl<R: BufRead>(&mut self, mut file: R) -> Result<(), io::Error> {
-        let mut alt_buf; // when there's an escape
+        let mut alt_buf; // when there's an escape, allocate a buffer for skipped escapes
         let mut remaining: Vec<u8> = Vec::new();
         let mut prev_color: C::Color = Default::default();
         let mut process_graphemes = |s: &str| {
@@ -85,9 +88,9 @@ impl<'a, W: Write, C: Colorizer> QueerCat<'a, W, C> {
 
         Ok(())
     }
-
+    /// Colorizes input from `file` and writes it to the `writer`.
     /// # Errors
-    /// Returns `Err` when writing with `self.writer`, reading `file` fails, or input is not valid utf-8
+    /// Returns `Err` when writing with `self.writer` or reading `file` fails
     pub fn cat<R: BufRead>(&mut self, file: R) -> Result<(), io::Error> {
         let res = self.cat_impl(file);
         self.writer

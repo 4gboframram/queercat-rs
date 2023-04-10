@@ -533,7 +533,7 @@ dependencies = [
 
 [[package]]
 name = "queercat"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "clap 4.2.1",
  "clap-num",
@@ -544,7 +544,7 @@ dependencies = [
 
 [[package]]
 name = "queercat-lib"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "criterion",
  "fixed",

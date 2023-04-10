@@ -17,6 +17,7 @@ pub enum QueerCatFrequency {
 }
 
 impl QueerCatFrequency {
+    /// Converts `self` to a tuple of `(horizontal, vertical)`
     pub fn as_freq(self) -> (Extended, Extended) {
         use QueerCatFrequency::{
             Aaaaaaaaaaaaa, Custom, Fast, Horizontal, HyperGay, Original, UltraHyperGay, Vertical,
@@ -37,6 +38,7 @@ impl QueerCatFrequency {
     }
 }
 
+/// Resets the colors of the terminal when printed.
 #[derive(Default)]
 pub struct TerminalResetter;
 impl std::fmt::Display for TerminalResetter {
@@ -45,14 +47,18 @@ impl std::fmt::Display for TerminalResetter {
     }
 }
 
+/// A colorizer that converts graphemes to a `State` that can be converted to a `Color` at any time 
 pub trait Colorizer {
     type Color: std::fmt::Display + PartialEq<Self::Color> + Default;
+    /// Resets the terminal colors when printed
     type Resetter: std::fmt::Display + Default;
     type State;
     fn calculate_color(state: Self::State, flag: &Flag<'_>) -> Self::Color;
+    /// Updates `self` and returns a `Self::State`
     fn update_state(&mut self, grapheme: &str) -> Self::State;
 }
 
+/// A 24bit colorizer
 pub struct Bits24 {
     theta: ColorV,
     col_theta: ColorV,
@@ -109,6 +115,7 @@ impl Colorizer for Bits24 {
     }
 }
 
+/// An Ansi colorizer
 pub struct Ansi {
     line: u32,
     col: u32,

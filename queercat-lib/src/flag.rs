@@ -1,10 +1,14 @@
 #![allow(clippy::unreadable_literal)]
+//! The list of preset flags, and the `Flag` struct
+
+/// The types of color methods
 #[derive(Copy, Clone, Debug)]
 pub enum ColorMethod {
     Stripes,
     Rainbow,
 }
 
+/// A striped flag that contains rgb colors and ansi codes.
 #[derive(Clone, Debug)]
 pub struct Flag<'a> {
     pub name: &'a str,
@@ -48,6 +52,7 @@ macro_rules! stripe_flag {
     () => {}
 }
 
+// DO NOT TOUCH THIS IF YOU'RE ADDING A CUSTOM FLAG. See `dutch`
 stripe_flag! {
     {
         .name = "transgender",
@@ -286,7 +291,34 @@ pub const fn rainbow() -> Flag<'static> {
             198, 199, 163, 164, 128, 129, 93, 99, 63, 69, 33,
         ],
         stripe_colors: &[],
-        factor: crate::Extended::lit("0.0"),
+        factor: crate::Extended::ZERO,
         color_method: ColorMethod::Rainbow,
+    }
+}
+
+use crate::color::Color;
+
+// An example of how to implement a custom flag.
+// Please use `#[must_use]` to make clippy happy
+#[must_use]
+pub const fn dutch() -> Flag<'static> {
+    // You can make stripes thinner by repeating the pattern
+    const STRIPES: [Color; 6] = [
+        Color::from_hex(0xA91F32),
+        Color::from_hex(0xffffff),
+        Color::from_hex(0x1E4785),
+        // repeat again
+        Color::from_hex(0xA91F32),
+        Color::from_hex(0xffffff),
+        Color::from_hex(0x1E4785),
+    ];
+
+    Flag {
+        name: "dutch",
+        // you can repeat an ansi color multiple times to make the stripe thicker
+        ansi_colors: &[52, 52, 255, 255, 17, 17],
+        stripe_colors: &STRIPES,
+        factor: crate::Extended::lit("4.0"),
+        color_method: ColorMethod::Stripes,
     }
 }

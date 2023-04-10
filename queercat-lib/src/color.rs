@@ -1,8 +1,9 @@
 #![allow(clippy::must_use_candidate)]
-
+//! The module for working with colors. This should generally not be be accessed unless you know what you're doing.
 use crate::flag::Flag;
 use crate::{ColorV, Extended};
 
+/// An rgb color. Used in 24-bit mode
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub struct Color {
     red: ColorV,
@@ -19,6 +20,7 @@ const fn trunc(v: Extended) -> ColorV {
 }
 
 impl Color {
+    /// Create a `Color` from red, green, and blue components.
     #[must_use]
     pub const fn new(r: ColorV, g: ColorV, b: ColorV) -> Self {
         Self {
@@ -27,9 +29,12 @@ impl Color {
             blue: b,
         }
     }
+
     fn from_ext(r: Extended, g: Extended, b: Extended) -> Self {
         Self::new(trunc(r), trunc(g), trunc(b))
     }
+
+    /// Converts a color in the form of `0x??rrggbb` to an rgb color
     #[must_use]
     pub const fn from_hex(hex: u32) -> Self {
         let r = (hex & 0x00ff_0000) << 8;
@@ -40,17 +45,22 @@ impl Color {
         let b = ColorV::from_bits(b);
         Self::new(r, g, b)
     }
+    /// The red component of the color
     pub const fn red(&self) -> ColorV {
         self.red
     }
+
+    /// The blue component of the color
     pub const fn blue(&self) -> ColorV {
         self.blue
     }
+    // The green component of the color
     pub const fn green(&self) -> ColorV {
         self.green
     }
 
     // essentially just Hsv(theta, 1.0, 1.0) to rgb, but with some quick optimizations that make it inaccurate
+    /// Converts a hue value between 0 and 1 to an rgb color. Essentially `HSV(h, 1.0, 1.0).to_rgb()`
     #[must_use]
     pub fn rainbow(theta: ColorV) -> Self {
         const ZERO: Extended = Extended::ZERO;
@@ -69,8 +79,7 @@ impl Color {
             2 => Self::from_ext(ZERO, ONE, f - TWO),
             3 => Self::from_ext(ZERO, FOUR - f, ONE),
             4 => Self::from_ext(f - FOUR, ZERO, ONE),
-            5 => Self::from_ext(ONE, ZERO, SIX - f),
-            _ => unreachable!(),
+            _ => Self::from_ext(ONE, ZERO, SIX - f),
         }
     }
 
@@ -116,7 +125,6 @@ fn mix_field(first: ColorV, other: ColorV, balance: ColorV) -> ColorV {
     // = (f - o) * b + o
     // = (f - o).mul_add(b, o)
 
-    // first.wrapping_sub(other).wrapping_mul_add(balance, other)
     first * balance + other * (ColorV::MAX - balance)
 }
 
@@ -132,6 +140,7 @@ impl std::fmt::Display for Color {
     }
 }
 
+/// An color that uses ansi color codes
 #[allow(clippy::module_name_repetitions)]
 #[derive(Clone, Copy, PartialEq, Default, Eq)]
 pub struct AnsiColor(pub u8);

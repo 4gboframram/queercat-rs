@@ -35,9 +35,15 @@ Options:
 ```
 
 **NOTE** for `-a` and `-s`, you have to write the flag multiple times
+## Screenshots
+Screenfetch with the trans flag:
+![image](./screenshots/screenfetch-1.png)
+Screenfetch with the lesbian flag in 24-bit mode with a custom horizontal frequency:
+![image](./screenshots/screenfetch-2.png)
+
 ## Installation
 - Release binaries are provided for x86-64 windows, mac, and linux
-- You can build the cli from source with `cargo install --path ./queercat`
+- You can build and install the cli from source with `cargo install --path ./queercat`
 
 ## Motivation
 I was working on a pride-themed shell and I wanted to have [queercat](https://github.com/Elsa002/queercat) as a builtin command and to use it as a library for internals. 
@@ -60,6 +66,10 @@ I would not have been able to make a rewrite nor write this code from scratch wi
 
 As a nod to the original project, this code is released under the same license: the `Unlicense`, and is dedicated to the public domain.
 ## Changelog
+- **v0.1.3**:
+    - Optimized grapheme processing by not using the `unicode_reader` crate. This results in between 3-15x throughput increase on my machine. Please never use the `unicode_reader`crate unless you cannot manually buffer.
+    - Added more benchmarks because why not.
+    - Started writing documentation.
 - **v0.1.2**:
    - Fixed bug where sequential escape sequences would not be skipped
 - **v0.1.1**:
@@ -76,8 +86,7 @@ As a nod to the original project, this code is released under the same license: 
 ## Todo
 - Publish to `crates.io` when version `1.0.0` is released
 - Add screenshots
-- Optimize the grapheme iterator, as profiling says that it takes most of the cpu time (other than io)
 - Document the library api
 - Add more queer easter eggs
 - Maybe interpolate colors in hsv color space instead of rgb
-- Maybe add a config file for custom flags that can be loaded by name later
+
