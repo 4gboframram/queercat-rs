@@ -13,4 +13,4 @@ queercat-lib = {path = "../queercat-lib"}
 clap = { version = "4.2.1", features = ["derive"] }
 multi_reader = "0.1.0"
 clap-num = "1.0.2"
-atty = "0.2.14"
+is-terminal = "0.4.7"

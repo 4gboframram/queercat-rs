@@ -6,6 +6,7 @@
 use queercat_lib::{color::Color, flag::*, Ansi, Bits24, QueerCat, QueerCatFrequency};
 
 use clap::{Args, Parser, ValueEnum};
+use is_terminal::IsTerminal;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Result, Write};
 use std::path::PathBuf;
@@ -174,7 +175,7 @@ fn main() -> Result<()> {
     };
 
     // If stdin is piped, then we probably want to observe it in real time, so we don't buffer it
-    let writer: Box<dyn Write> = if atty::is(atty::Stream::Stdin) {
+    let writer: Box<dyn Write> = if std::io::stdin().is_terminal() {
         Box::new(BufWriter::new(std::io::stdout().lock()))
     } else {
         Box::new(std::io::stdout().lock())
