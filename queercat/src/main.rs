@@ -2,7 +2,7 @@
 #![allow(clippy::enum_glob_use)]
 
 #[allow(clippy::wildcard_imports)]
-// the functions are automatically generated and do not affect readability at all
+// the functions are automatically generated and do not affect readability at all. clippy moment.
 use queercat_lib::{color::Color, flag::*, Ansi, Bits24, QueerCat, QueerCatFrequency};
 
 use clap::{Args, Parser, ValueEnum};
@@ -13,8 +13,8 @@ use std::path::PathBuf;
 
 /// Concatenate FILE(s), or standard input, to standard output.
 /// With no FILE, or when FILE is -, read standard input.
-//
-// Report all queercat bugs to <https://github.com/4gboframram/queercat-rs/issues>
+///
+/// Report all queercat bugs to <https://github.com/4gboframram/queercat-rs/issues>
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
@@ -70,16 +70,16 @@ pub struct FlagArg {
 #[derive(Clone, PartialEq, Eq, PartialOrd, ValueEnum)]
 pub enum FlagChoice {
     Rainbow,
-    #[value(alias("trans"), alias("tra"))]
+    #[value(alias("trans"), alias("tra"), alias("traaaa"), alias("traa"),  alias("traaa"))]
     Transgender,
     #[value(alias("enby"), alias("nb"))]
     NonBinary,
-    #[value(alias("lesbiab"), alias("lesb"), alias("debian"))]
+    #[value(alias("lesbiab"), alias("lesb"), alias("debian"), alias("desbian"))]
     Lesbian,
     Gay,
     #[value(alias("pan"))]
     Pansexual,
-    #[value(alias("bi"))]
+    #[value(alias("bi"),  alias("bi-yourself"))]
     Bisexual,
 
     GenderFluid,
